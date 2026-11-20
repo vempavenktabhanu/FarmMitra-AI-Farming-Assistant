@@ -878,6 +878,7 @@ def translate_api_errors(response):
 
 
 @app.route("/", methods=["GET", "POST"])
+@app.route("/api/index", methods=["GET", "POST"])
 def index():
     farm = get_farm()
     if not session.get("language"):
