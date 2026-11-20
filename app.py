@@ -78,8 +78,12 @@ def get_available_model():
         models = genai.list_models()
         # Prioritize officially supported models for generateContent
         supported_models = [
+            'models/gemini-1.5-flash',
+            'models/gemini-2.0-flash',
             'models/gemini-2.5-flash',
-            'models/gemini-2.5-flash-lite'
+            'models/gemini-2.5-flash-lite',
+            'models/gemini-1.5-flash-latest',
+            'models/gemini-1.5-pro'
         ]
         for model in models:
             if model.name in supported_models and 'generateContent' in model.supported_generation_methods:
@@ -88,10 +92,10 @@ def get_available_model():
         for model in models:
             if 'generateContent' in model.supported_generation_methods:
                 return model.name
-        return None
+        return 'gemini-1.5-flash'
     except Exception as e:
-        print(f"Error listing models: {e}")
-        return None
+        print(f"Error listing models (falling back to gemini-1.5-flash): {e}")
+        return 'gemini-1.5-flash'
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "farmmitra-local-demo-key")
 app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024
 app.config["UPLOAD_FOLDER"] = str(UPLOAD_DIR)
@@ -1137,7 +1141,7 @@ def speech_to_text():
 
     try:
         answer_language = LANGUAGES.get(lang, "English")
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel(get_available_model())
         with open(tmp_path, "rb") as af:
             audio_data_bytes = af.read()
 
@@ -1356,7 +1360,7 @@ def api_ask():
         if not os.environ.get("GEMINI_API_KEY"):
             return jsonify({"error": "Gemini API key not configured"})
 
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel(get_available_model())
 
         farm = get_farm()
         answer_language = LANGUAGES.get(lang, "English")
@@ -1438,7 +1442,7 @@ def api_crop_recommend():
                 f"Wind {cur.get('wind_speed', '?')} km/h."
             )
 
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel(get_available_model())
         prompt = (
             f"Location: {location}. Month: {current_month}. Soil: {soil_type}. Irrigation: {irrigation}. {weather_context} "
             f"Recommend TOP 3 crops now. In {answer_language}. Format:\n"
