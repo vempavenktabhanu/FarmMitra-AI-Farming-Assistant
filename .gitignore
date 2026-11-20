@@ -55,3 +55,6 @@ bgimages/
 
 # Logs
 *.log
+
+# Vercel
+.vercel

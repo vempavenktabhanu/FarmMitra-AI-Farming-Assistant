@@ -44,17 +44,33 @@ load_dotenv()
 
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "farmmitra.db"
-UPLOAD_DIR = BASE_DIR / "uploads"
-UPLOAD_DIR.mkdir(exist_ok=True)
 
-app = Flask(__name__)
+# Support serverless / read-only deployment environments like Vercel
+if os.environ.get("VERCEL"):
+    temp_dir = Path(tempfile.gettempdir())
+    DB_PATH = temp_dir / "farmmitra.db"
+    UPLOAD_DIR = temp_dir / "farmmitra_uploads"
+else:
+    DB_PATH = BASE_DIR / "farmmitra.db"
+    UPLOAD_DIR = BASE_DIR / "uploads"
+
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+app = Flask(
+    __name__,
+    template_folder=str(BASE_DIR / "templates"),
+    static_folder=str(BASE_DIR / "static")
+)
 
 # Configure Gemini API
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-if not GEMINI_API_KEY:
-    raise ValueError("GEMINI_API_KEY environment variable is not set")
-genai.configure(api_key=GEMINI_API_KEY)
+if GEMINI_API_KEY:
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+    except Exception as e:
+        print(f"Warning: Failed to configure Gemini API: {e}")
+else:
+    print("Warning: GEMINI_API_KEY environment variable is not set. Gemini AI features will be disabled until key is provided.")
 
 # Function to get a free model that supports generateContent
 def get_available_model():
