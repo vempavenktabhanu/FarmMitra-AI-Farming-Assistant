@@ -61,6 +61,7 @@ app = Flask(
     template_folder=str(BASE_DIR / "templates"),
     static_folder=str(BASE_DIR / "static")
 )
+app.url_map.strict_slashes = False
 
 # Configure Gemini API
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
@@ -881,8 +882,24 @@ def translate_api_errors(response):
     return response
 
 
+@app.errorhandler(404)
+def not_found_handler(e):
+    p = request.path.rstrip("/")
+    if p in ("", "/api/index", "/api/index.py"):
+        return index()
+    return jsonify({
+        "error": "404 Not Found",
+        "path": request.path,
+        "environ_path_info": request.environ.get("PATH_INFO"),
+        "environ_script_name": request.environ.get("SCRIPT_NAME"),
+        "environ_query_string": request.environ.get("QUERY_STRING")
+    }), 404
+
+
 @app.route("/", methods=["GET", "POST"])
 @app.route("/api/index", methods=["GET", "POST"])
+@app.route("/api/index/", methods=["GET", "POST"])
+@app.route("/api/index.py", methods=["GET", "POST"])
 def index():
     farm = get_farm()
     if not session.get("language"):

@@ -46,7 +46,9 @@ class VercelPathFix:
                 elif path.startswith("/api/index/"):
                     environ["PATH_INFO"] = path[len("/api/index"):]
 
+        environ["SCRIPT_NAME"] = ""
         return self.wsgi_app(environ, start_response)
 
 
 app = VercelPathFix(flask_app)
+application = app
